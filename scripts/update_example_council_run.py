@@ -5,12 +5,13 @@ python scripts/update_example_council_run.py --eval_type pairwise
 python scripts/update_example_council_run.py --eval_type rubric
 """
 
+import argparse
+import asyncio
+
+from dotenv import load_dotenv
+
 from lm_council.council import LanguageModelCouncil
 from lm_council.judging import PRESET_EVAL_CONFIGS
-from dotenv import load_dotenv
-import asyncio
-import argparse
-
 
 load_dotenv()
 
@@ -27,7 +28,7 @@ async def main(eval_type: str):
             "x-ai/grok-3-mini",
         ],
         judge_models=[
-            "google/gemini-2.5-flash-preview-05-20",
+            "google/gemini-2.5-flash-lite-preview-06-17",
             "x-ai/grok-3-mini",
             "deepseek/deepseek-r1-0528",
         ],

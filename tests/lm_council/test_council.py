@@ -12,7 +12,7 @@ async def test_language_model_council():
 
     lmc = LanguageModelCouncil(
         models=[
-            "google/gemini-2.5-flash-preview-05-20",
+            "google/gemini-2.5-flash-lite-preview-06-17",
             "meta-llama/llama-3.1-8b-instruct",
             "x-ai/grok-3-mini",
         ]
