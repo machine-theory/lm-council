@@ -106,10 +106,11 @@ class LanguageModelCouncil:
             )
             missing = list(reference_models - set(self.models))
 
-            print(
-                f"The following reference models are specified in config.algorithm_config.reference_models but are not present in self.models: {missing}. Adding these model(s) to the council."
-            )
-            self.models.extend(missing)
+            if missing:
+                print(
+                    f"The following reference models are specified in config.algorithm_config.reference_models but are not present in self.models: {missing}. Adding these model(s) to the council."
+                )
+                self.models.extend(missing)
 
         # List of all user prompts.
         self.user_prompts = []
@@ -372,12 +373,6 @@ class LanguageModelCouncil:
                 if completions_map[llm1] != completions_map[llm2]
             ]
 
-        # Apply positional flipping.
-        if pairwise_comparison_config.position_flipping:
-            completion_pairs = [
-                (llm2, llm1) for llm1, llm2 in completion_pairs
-            ] + completion_pairs
-
         # Filter down the pairs based on the pairwise_comparison_config.
         if pairwise_comparison_config.algorithm_type == "all_pairs":
             # No filtering needed.
@@ -396,6 +391,13 @@ class LanguageModelCouncil:
                 if pair[0]
                 in pairwise_comparison_config.algorithm_config.reference_models
             ]
+
+        # Apply positional flipping.
+        # NOTE: This must happen after filtering down the pairs.
+        if pairwise_comparison_config.position_flipping:
+            completion_pairs = [
+                (llm2, llm1) for llm1, llm2 in completion_pairs
+            ] + completion_pairs
 
         # Apply reps.
         completion_pairs = [

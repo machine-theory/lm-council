@@ -1,303 +1,138 @@
-# Language Model Council: Democratically Benchmarking Foundation Models on Highly Subjective Tasks
+# Language Model Council
 
-### Justin Zhao, Flor Miriam Plaza-del-Arco, Benjamin Genchel, Amanda Cercas Curry
+*Can LLMs decide amongst themselves who is the best?*
+
+![alt text](images/council.png)
+
+- Recording: <https://youtu.be/hI0XCE27QqE>
+- Slides: <https://bit.ly/44XSEnh>
+
+## Mini Manifesto
+
+Language models are outpacing our abilities to evaluate them. Yet, as capable as we hype up LLMs to be, all of the most popular evals the world uses to rank LLMs are still exclusively human-curated and human-designed.
+
+When a new model gets released, Twitter and Reddit get flooded with claims about this latest model being the new best at one thing or another. With so many benchmarks out there, the truth is that deciding which model is the best has become a matter of reputation and taste. I got tired of humans telling me which LLM is best at X, Y, or Z. And so in this work, I desperately wanted to answer a simple question: Can we get LLMs to decide amongst themselves who is the best?
+
+LMSYS demonstrated that GPT-4 agrees with humans at roughly the same rate that humans agree with each other. Today, more and more of us are using models like GPT-4 in place of human raters. But GPT-4 is only one model and today, it's actually one of the "weakest" models on Chatbot Arena.
+
+And how much does a model’s Chatbot Arena rank really tell us about broad human alignment? The PRISM dataset — which was recognized as the Best Paper at NeurIPS in 2024 — showed that rankings shift dramatically depending on which humans you sample. It turns out that for open-ended prompts, there's no single "right" answer — and different populations have fundamentally different views of what “best” means.
+
+On the other side of coin, researchers have also found that LLMs exhibit all sorts of biases on gender, religion, and even value of life. More recent work from the Societal Impacts team at Anthropic and Researchers at the Center for AI Safety are finding even more evidence that: Each model carries its own values — inherited unintentionally or intentionally — from the societies and organizations that built them, and the humans that curate and choose their training data.
+
+In the future, you can imagine that we'll have strong LLMs from every country and many organizations — each shaped by different geopolitical priorities, specializations, and cultural values. More of us are coming to rely on AI for more things, and for things like advising on policies, giving life advice, predicting the future, these domains may be too speculative or too subjective for any single model to evaluate fairly, and disagreement between AI systems will become more prevalent.
+
+So how do we make decisions amidst dissenting opinions in human society? Well, one thing we do in America is called democracy. We all know democracy is far from perfect, but at its core, democracy is a profound idea based on decentralizing power, giving everyone a voice, and relying on the collective to make an important decision.
+
+That's the spirit behind the Language Model Council. Put LLMs in a democracy and give them agency so that they can elect a leader amongst themselves.
+
+This library provides an open-source archive of all the code and analysis used in our original research paper, and serves as a tool for anyone interested in using a council of LLMs to self-evaluate on a set of prompts.
+
+## Getting started
+
+1. Install with pip.
+
+```sh
+pip install lm-council
+```
+
+2. Add your [openrouter](https://openrouter.ai/) secrets to a `.env` file.
+
+```sh
+OPENROUTER_API_KEY = ""
+```
+
+See `.env.example` for an example. Check here for your [openrouter](https://openrouter.ai/settings/keys) API key.
+
+3. Configure and execute your council.
+
+You can run the council as a standalone python script or in jupyter notebooks. See `examples/` for example notebooks.
+
+```python
+from lm_council import LanguageModelCouncil
+from dotenv import load_dotenv
+
+
+def main():
+    load_dotenv()
+
+    lmc = LanguageModelCouncil(
+        models=[
+            "deepseek/deepseek-r1-0528",
+            "google/gemini-2.5-flash-lite-preview-06-17",
+            "x-ai/grok-3-mini",
+            "meta-llama/llama-3.1-8b-instruct",
+        ],
+    )
+
+    # Run the council on any prompt of your choosing.
+    completion, judgment = await lmc.execute("Say hello.")
+
+    # Run the council on many prompts in parallel.
+    completions, judgements = await lmc.execute(
+        ["Say hello.", "Say goodbye.", "What is your name?", "What is 1 + 1?"]
+    )
+
+    # Save and load your council.
+    lmc.save("run_0")
+    lmc.load("run_0")
+
+    # Shows a leaderboard and returns a scores dataframe.
+    return lmc.leaderboard()
+
+
+asyncio.run(main())
+```
+
+## About the Paper [NAACL 2025, Main]
+
+Our paper, "Language Model Council: Democratically Benchmarking Foundation Models on Highly Subjective Tasks", focuses on a case study involving 20 large language models (LLMs) to evaluate each other on a highly subjective emotional intelligence task, and was the first to study the application of LLM-as-a-Judge in a democratic setting.
 
 <p align="center">
-  <img src="images/hero_3.png" alt="hero">
+  <img src="images/paper.png" alt="hero">
 </p>
 
-## Quick links
+Our paper was accepted to NAACL Main, and was presented in Alberqueque, New Mexico in May 2025. You can watch the recording of the talk on [YouTube](https://youtu.be/hI0XCE27QqE). Slides can be found [here](https://bit.ly/44XSEnh).
+
+Authors:
+
+- Justin Zhao (Independent -> Research Engineer @ Meta Superintelligence Labs)
+- Flor Miriam Plaza-del-Arco (Researcher @ Bocconi University -> Assistant Professor @ Leiden University)
+- Benjamin Genchel (ML Engineer @ Spotify -> Independent)
+- Amanda Cercas Curry (Researcher @ Bocconi University -> Research Scientist @ CENTAI)
+
+You can find in-depth jupyter notebooks to reproduce the findings and figures reported in the
+Language Model Council paper under `analysis/`.
+
+### Quick links
 
 - Website: <https://llm-council.com>
 - Dataset: <https://huggingface.co/datasets/llm-council/emotional_application>
 - Paper: <https://arxiv.org/abs/2406.08598>
-
-## Abstract
-
-As Large Language Models (LLMs) continue to evolve, evaluating them remains a persistent challenge. Many recent evaluations use LLMs as judges to score outputs from other LLMs, often relying on a single large model like GPT-4o. However, using a single LLM judge is prone to intra-model bias, and many tasks - such as those related to emotional intelligence, creative writing, and persuasiveness - may be too subjective for a single model to judge fairly. We introduce the Language Model Council (LMC), where a group of LLMs collaborate to create tests, respond to them, and evaluate each other's responses to produce a ranking in a democratic fashion. Unlike previous approaches that focus on reducing cost or bias by using a panel of smaller models, our work examines the benefits and nuances of a fully inclusive LLM evaluation system. In a detailed case study on emotional intelligence, we deploy a council of 20 recent LLMs to rank each other on open-ended responses to interpersonal conflicts. Our results show that the LMC produces rankings that are more separable and more robust, and through a user study, we show that they are more consistent with human evaluations than any individual LLM judge. Using all LLMs for judging can be costly, however, so we use Monte Carlo simulations and hand-curated sub-councils to study hypothetical council compositions and discuss the value of the incremental LLM judge.
-
-## Analysis notebooks
-
-In `analysis/`, we provide in-depth jupyter notebooks to reproduce the findings and figures reported in the
-Language Model Council paper.
-
-## Multi-provider REST-based parallel processing
-
-We provide a unified and configurable batch parallel processing interface designed for interacting with multiple large language model (LLM) service providers through RESTful APIs.
-
-### Setup
-
-Set up python venv.
-
-```sh
-python3.12 -m venv env
-source env/bin/activate
-```
-
-Install requirements.
-
-```sh
-pip install -r requirements.txt
-pip install -e .
-```
-
-Add secrets to a `.env` file. See `.env.example` for an example.
-
-```env
-OPENAI_API_KEY = ""
-HUGGING_FACE_HUB_TOKEN = ""
-ANTHROPIC_API_KEY = ""
-MISTRAL_API_KEY = ""
-TOGETHER_API_KEY = ""
-COHERE_API_KEY = ""
-VERTEX_PROJECT_ID = ""
-VERTEX_API_KEY = ""
-CEREBRAS_API_KEY = ""
-```
-
-### Supported providers
-
-- [OpenAI](https://platform.openai.com/docs/api-reference)
-- [Mistral](https://docs.mistral.ai/api/)
-- [Together](https://docs.together.ai/docs/inference-rest)
-- [Vertex AI](https://cloud.google.com/vertex-ai/docs/reference/rest)
-- [Cohere](https://docs.cohere.com/reference/chat)
-- [Anthropic](https://docs.anthropic.com/en/api/messages)
-- [Cerebras](https://inference-docs.cerebras.ai/introduction)
-- [Lepton](https://www.lepton.ai/docs/public_models/model_apis)
-
-Providers may have unique constraints on token limits (TPS or TPM), rate lmits (RPS or RPM), or
-both. Providers have slight variations in request/request payloads. Our unified interface
-streamlines this.
-
-### Sample execution with a hypothetical council (9-steps)
-
-1. Generate completion requests for interpersonal conflict generation.
-
-    ```sh
-    python llm_council/generate_completion_requests.py \
-        --prompt_template_key generate_expansion \
-        --jsonl_input_file data/emobench_ea.jsonl \
-        --outdir experiments/dilemma_expansion/collection \
-        --temperature 0.5 \
-        --llm_allowlist together://meta-llama/Llama-3-8b-chat-hf \
-        --llm_allowlist together://meta-llama/Llama-3-70b-chat-hf \
-        --llm_allowlist together://Qwen/Qwen1.5-32B-Chat
-    ```
-
-    This will generate a directory tree under `outdir` following the pattern `<provider>/<llm>/requests.jsonl`.
-    `requests.jsonl` contains all of the REST request payloads.
-
-    NOTE: Remove all `--llm_allowlist` arguments to use the full council, defined in `constants.py`.
-
-2. Collect interpersonal conflicts from multiple LLMs.
-
-    ```sh
-    python llm_council/invocation/execute_council.py \
-        --requests_dir experiments/dilemma_expansion/collection
-    ```
-
-    All of the REST response payloads will be saved alongside the `requests.jsonl` files in the corresponding directories `<provider>/<llm>/responses.jsonl`.
-
-3. Conslidate interpersonal conflicts from multiple LLMs.
-
-    ```sh
-    python llm_council/consolidate_council_responses.py \
-        --council_response_metadata_key completion_response \
-        --responses_dir experiments/dilemma_expansion/collection \
-        --outdir experiments/dilemma_expansion
-    ```
-
-    The consolidated responses from all council members will be saved in: `experiments/dilemma_expansion/consolidated_responses.jsonl`.
-
-4. Generate completion requests for conversational responses.
-
-    ```sh
-    python llm_council/generate_completion_requests.py \
-        --prompt_template_key conversational_dilemma_response \
-        --jsonl_input_file experiments/dilemma_expansion/consolidated_responses.jsonl \
-        --outdir experiments/conversational_response/collection \
-        --word_limit 250 \
-        --llm_allowlist together://meta-llama/Llama-3-8b-chat-hf \
-        --llm_allowlist together://meta-llama/Llama-3-70b-chat-hf \
-        --llm_allowlist together://Qwen/Qwen1.5-32B-Chat
-    ```
-
-    Same as step 1, but for collecting conversational responses.
-
-5. Collect conversational responses from multiple LLMs.
-
-    ```sh
-    python llm_council/invocation/execute_council.py \
-        --requests_dir experiments/conversational_response/collection
-    ```
-
-    Same as step 2, but for conversational responses.
-
-6. Conslidate conversational responses from multiple LLMs.
-
-    ```sh
-    python llm_council/consolidate_council_responses.py \
-        --council_response_metadata_key completion_response \
-        --responses_dir experiments/conversational_response/collection \
-        --outdir experiments/conversational_response
-    ```
-
-    The consolidated responses from all council members will be saved in: `experiments/conversational_response/consolidated_responses.jsonl`.
-
-7. Generate requests for judging conversational responses.
-
-    ```sh
-    python llm_council/generate_judging_requests.py \
-        --input_jsonl_file experiments/conversational_response/consolidated_responses.jsonl \
-        --outdir experiments/conversational_response_judging/collection \
-        --prompt_template_key judge_conversational_dilemma_response_sxs_granular_no_tie \
-        --reference_llm together://Qwen/Qwen1.5-32B-Chat \
-        --llm_allowlist together://meta-llama/Llama-3-8b-chat-hf \
-        --llm_allowlist together://meta-llama/Llama-3-70b-chat-hf \
-        --llm_allowlist together://Qwen/Qwen1.5-32B-Chat
-    ```
-
-8. Collect judgements and ratings from multiple LLMs.
-
-    ```sh
-    python llm_council/invocation/execute_council.py \
-        --requests_dir experiments/conversational_response_judging/collection
-    ```
-
-9. Conslidate conversational responses from multiple LLMs.
-
-    ```sh
-    python llm_council/consolidate_council_responses.py \
-        --council_response_metadata_key judging_response \
-        --responses_dir experiments/conversational_response_judging/collection \
-        --outdir experiments/conversational_response_judging
-    ```
-
-Done!
-
-### Adding a prompt
-
-Define the prompt in `prompts.py` and add it to the registry `PROMPT_REGISTRY`. Once in the registry, the prompt can be referred to by key in command line arguments, e.g. `--prompt_template_key`.
-
-The dictionary objects from the `--input_jsonl_file` are passed to the prompt template for formatting, so make sure the keyword bracketed placeholder variables `{}` and the fields in the `--input_jsonl_file` are consistent. If in doubt, generate requests first and manually inpsect them.
-
-#### Adding an LLM as a council member
-
-The convention for specifying an LLM is `<provider>://<llm>`.
-
-To add an LLM to the default council, add the LLM to `constants.py`. However, if the provider is already supported, the LLM can be specified directly `--llm_allowlist` in provided parallel processing scripts, as long as the LLM name is correct.
-
-For 1-off testing, refer to `issue_single_prompt.py`.
-
-### Adding a new Provider
-
-Under `llm_council/processors/services/`, define a new class that implements the `BaseProvider` class. For example:
-
-```python
-import dotenv
-import os
-import logging
-
-from llm_council.providers.base_provider import BaseProvider
-
-# Load credentials from a .env file.
-dotenv.load_dotenv()
-
-
-class OpenAIProvider(BaseProvider):
-    """https://platform.openai.com/docs/api-reference/making-requests"""
-
-    def __init__(self, llm) -> None:
-        BaseProvider.__init__(self, llm)
-
-        if "gpt-4o-mini" in llm:
-            self.max_requests_per_minute = 30000
-        elif "gpt-4o" in llm:
-            self.max_requests_per_minute = 10000
-        elif "o1-preview" in llm:
-            self.max_requests_per_minute = 500
-        elif "o1-mini" in llm:
-            self.max_requests_per_minute = 1000
-        else:
-            logging.warning(
-                f"Unknown model for OpenAI Service: {llm}. Using default rate limit of 10K RPM."
-            )
-            self.max_requests_per_minute = 10000
-
-    def __api_key(self) -> str | None:
-        return os.getenv("OPENAI_API_KEY")
-
-    def request_url(self) -> str:
-        return "https://api.openai.com/v1/chat/completions"
-
-    def request_header(self) -> dict:
-        return {"Authorization": f"Bearer {self.__api_key()}"}
-
-    def sample_request(self) -> dict:
-        return {
-            "model": "gpt-4o-mini",
-            "messages": [{"role": "user", "content": "Say hello!"}],
-        }
-
-    def rate_limit_time_unit(self) -> str:
-        return "minutes"
-
-    def max_requests_per_unit(self) -> int:
-        return self.max_requests_per_minute
-
-    def max_tokens_per_minute(self) -> int:
-        return 290000
-
-    def get_request_prompt(self, request: dict) -> str:
-        return request["messages"][0]["content"]
-
-    def get_request_body(
-        self, user_prompt: str, temperature: float | None, schema_name: str | None
-    ) -> dict:
-        request = {
-            "model": self.model_name,
-            "messages": [{"role": "user", "content": user_prompt}],
-        }
-        if temperature is not None:
-            request["temperature"] = temperature
-        if schema_name is not None:
-            schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
-            if schema_class is None:
-                raise ValueError(f"Invalid schema: {schema_name}")
-            request["response_format"] = {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": schema_name,
-                    "schema": schema_class.schema(),
-                },
-            }
-        return request
-
-    def get_response_string(self, json_response: dict) -> str:
-        return json_response["choices"][0]["message"]["content"]
-
-    def get_response_info(self, json_response: dict) -> dict:
-        return {
-            "llm": self.llm,
-            "model_name": self.model_name,
-            "id": json_response["id"],
-            "usage": json_response["usage"],
-        }
-```
-
-Then, import the service and add it to the provider registry in `llm_council/processors/services/__init__.py`
-
-Finally, add valid qualified provider paths to `llm_council/constants.py`, e.g.
-
-```py
-[
-    "openai://gpt-3.5-turbo-0125",
-    "openai://gpt-4-turbo-2024-04-09",
-    "openai://gpt-4-0613",  # gpt-4
-    "openai://gpt-4o-mini-2024-07-18",
-    "openai://gpt-4o-2024-08-06",
-    "openai://o1-preview-2024-09-12",
-    "openai://o1-mini-2024-09-12",
-]
+- Recording: <https://youtu.be/hI0XCE27QqE>
+- Slides: <https://bit.ly/44XSEnh>
+
+## FAQs
+
+### Why OpenRouter?
+
+For ease of maintenance, all model outputs are served by OpenRouter. The original implementation used for the paper used each organization's custom API endpoint through REST, which resulted in a lot of boilerplate code to manage different REST API request schemas and response formats. OpenRouter solves this for us by enabling us to query more models under a single unified interface. For maximally parallelized model querying, we adhere to [OpenRouter's rate limits](https://openrouter.ai/docs/api-reference/limits), which we fetch using your API key before the first batch of requests.
+
+## Citation
+
+If you find this work helpful or interesting, please consider citing it as so:
+
+```latex
+@inproceedings{zhao-etal-2025-language,
+  title     = {Language Model Council: Democratically Benchmarking Foundation Models on Highly Subjective Tasks},
+  author    = {Zhao, Justin and Plaza-del-Arco, Flor Miriam and Genchel, Benjamin and Curry, Amanda Cercas},
+  editor    = {Chiruzzo, Luis and Ritter, Alan and Wang, Lu},
+  booktitle = {Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},
+  pages     = {12395--12450},
+  address   = {Albuquerque, New Mexico},
+  month     = apr,
+  year      = {2025},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2025.naacl-long.617},
+  url       = {https://aclanthology.org/2025.naacl-long.617/},
+}
 ```
