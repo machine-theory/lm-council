@@ -11,7 +11,7 @@
 
 Language models are outpacing our abilities to evaluate them. Yet, as capable as we hype up LLMs to be, all of the most popular evals the world uses to rank LLMs are still exclusively human-curated and human-designed.
 
-When a new model gets released, Twitter and Reddit get flooded with claims about this latest model being the new best at one thing or another. With so many benchmarks out there, the truth is that deciding which model is the best has become a matter of reputation and taste. I got tired of humans telling me which LLM is best at X, Y, or Z. And so in this work, I desperately wanted to answer a simple question: Can we get LLMs to decide amongst themselves who is the best?
+When a new model gets released, Twitter and Reddit get flooded with claims about this latest model being the new best at one thing or another. With so many benchmarks out there, deciding which model is the best has become a matter of taste. I became curious to answer a bit of a different question: Can we get LLMs to decide amongst themselves who is the best?
 
 LMSYS demonstrated that GPT-4 agrees with humans at roughly the same rate that humans agree with each other. Today, more and more of us are using models like GPT-4 in place of human raters. But GPT-4 is only one model and today, it's actually one of the "weakest" models on Chatbot Arena.
 
