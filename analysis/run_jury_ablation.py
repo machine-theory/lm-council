@@ -84,13 +84,13 @@ def predict_win_rate(elo_ratings, SCALE=400, BASE=10, INIT_RATING=1000):
     return df.T
 
 
-def get_battles_from_judgment(df, WEIGHT=3):
+def get_battles_from_judgment(df, example_id_column="emobench_id", WEIGHT=3):
     """Maps battle outcomes to specific winners. The WEIGHT is used to weight strong votes."""
     # Modified from https://github.com/lm-sys/arena-hard-auto/blob/main/show_result.py#L112C1-L176C30
     battles = []
     for _, row in df.iterrows():
         output = {
-            "question_id": row["emobench_id"],
+            "question_id": row[example_id_column],
             "model_a": row["first_completion_by"],
             "model_b": row["second_completion_by"],
         }
@@ -117,7 +117,9 @@ def get_battles_from_judgment(df, WEIGHT=3):
     return pd.DataFrame(battles)
 
 
-def compute_mle_elo(df, reference_llm_completer, SCALE=400, BASE=10, INIT_RATING=1000):
+def compute_mle_elo(
+    df, reference_llm_completer=None, SCALE=400, BASE=10, INIT_RATING=1000
+):
     """Compute the ELO scores for all models."""
     df = get_battles_from_judgment(df)
 
@@ -149,7 +151,7 @@ def compute_mle_elo(df, reference_llm_completer, SCALE=400, BASE=10, INIT_RATING
     elo_scores = SCALE * lr.coef_[0] + INIT_RATING
 
     # set anchor as reference_llm_completer = 1000
-    if reference_llm_completer in models.index:
+    if reference_llm_completer and reference_llm_completer in models.index:
         elo_scores += 1000 - elo_scores[models[reference_llm_completer]]
     return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 
@@ -163,7 +165,7 @@ def sample_combinations(items, choose, instances):
 def sample_llm_council_members(llm_council_members, k, n):
     """
     Generates a list of n instances, each being a random sample of size k
-    from llm_council_members with replacement.
+    from lm_council_members with replacement.
 
     Parameters:
     llm_council_members (list): The list of council members to sample from.
@@ -178,7 +180,7 @@ def sample_llm_council_members(llm_council_members, k, n):
 
 def filter_ratings_by_allowlist(df, llm_judge_allowlist):
     """Filter ratings by a list of allowed judges."""
-    return df[df["llm_judge"].isin(llm_judge_allowlist)]
+    return df[df["judge_model"].isin(llm_judge_allowlist)]
 
 
 def get_relevant_ratings_for_trial(df, emo_bench_ids, llm_judges):
@@ -220,7 +222,7 @@ def get_adversarial_judge_ratings(df):
     ].drop_duplicates()
 
     # Assign fixed values
-    adversarial_judge_df["llm_judge"] = "adversarial"
+    adversarial_judge_df["judge_model"] = "adversarial"
     adversarial_judge_df["metadata"] = None
 
     # Assign random pairwise choices.
@@ -467,7 +469,7 @@ all_jury_ablation_stats = []
 for num_emobench_ids in tqdm(range(10, 101, 10), desc="Processing Ablation Trials"):
     jury_ablation_stats = get_jury_ablation_stats(
         df=df,
-        unique_council_members=df["llm_judge"].unique(),
+        unique_council_members=df["judge_model"].unique(),
         num_trials=100,
         num_adversarial_judges=None,
         num_adversarial_judges_frac=None,
